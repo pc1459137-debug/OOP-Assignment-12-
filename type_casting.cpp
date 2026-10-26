@@ -1,98 +1,66 @@
+//Practical 12: Type Casting, covering all four casting operators: static_cast, dynamic_cast, const_cast, and reinterpret_cast.
+
+
 #include <iostream>
-#include <typeinfo>
-#include <cstdint>
 using namespace std;
 
-// ---------- Classes for dynamic_cast demo ----------
-class Shape {
+// Base class
+class Base {
 public:
-    virtual void draw() const { cout << "Drawing a generic shape\n"; }
-    virtual ~Shape() {}                      // virtual => polymorphic
+    virtual ~Base() {}
 };
 
-class Circle : public Shape {
+// Derived class
+class Derived : public Base {
 public:
-    void draw() const override { cout << "Drawing a circle\n"; }
-    void radiusInfo() const { cout << "Circle: radius-specific method called\n"; }
+    void show() {
+        cout << "dynamic_cast successful: Derived object found." << endl;
+    }
 };
-
-class Rectangle : public Shape {
-public:
-    void draw() const override { cout << "Drawing a rectangle\n"; }
-};
-
-// Legacy function that takes a non-const pointer but never modifies the data
-void legacyPrint(int *p) { cout << "legacyPrint: " << *p << '\n'; }
-
-enum Color { RED = 1, GREEN, BLUE };
 
 int main() {
-    cout << "===== 1. IMPLICIT CONVERSION =====\n";
-    int i = 10;
-    double d = i;                    // int -> double (widening, safe)
-    double pi = 3.99;
-    int t = pi;                      // double -> int (truncation)
-    char ch = 'A';
-    int code = ch;                   // char -> int
-    cout << "int 10 -> double      : " << d << '\n';
-    cout << "double 3.99 -> int    : " << t << " (fraction lost)\n";
-    cout << "char 'A' -> int       : " << code << '\n';
 
-    cout << "\n===== 2. C-STYLE CAST =====\n";
-    int a = 7, b = 2;
-    cout << "Without cast 7 / 2    = " << a / b << '\n';
-    cout << "(float)a / b          = " << (float)a / b << '\n';
+    // 1. static_cast
+    double price = 99.75;
+    int wholePrice = static_cast<int>(price);
 
-    cout << "\n===== 3. static_cast =====\n";
-    cout << "static_cast<double>(a)/b = " << static_cast<double>(a) / b << '\n';
-    Color c = GREEN;
-    cout << "enum GREEN as int     = " << static_cast<int>(c) << '\n';
-    Color c2 = static_cast<Color>(3);
-    cout << "int 3 as enum         = " << c2 << " (BLUE)\n";
-    int num = 25;
-    void *vp = &num;                 // int* -> void* (implicit)
-    int *ip = static_cast<int *>(vp); // void* -> int*
-    cout << "void* back to int*    = " << *ip << '\n';
-    cout << "char from int 66      = " << static_cast<char>(66) << '\n';
+    cout << "static_cast: " << wholePrice << endl;
 
-    cout << "\n===== 4. dynamic_cast =====\n";
-    Shape *s1 = new Circle();
-    Shape *s2 = new Rectangle();
+    // 2. dynamic_cast
+    Base* basePtr = new Derived();
 
-    Circle *cp1 = dynamic_cast<Circle *>(s1);   // valid
-    if (cp1) { cout << "s1 -> Circle*    : success\n"; cp1->radiusInfo(); }
-    else       cout << "s1 -> Circle*    : failed\n";
+    Derived* derivedPtr = dynamic_cast<Derived*>(basePtr);
 
-    Circle *cp2 = dynamic_cast<Circle *>(s2);   // invalid -> nullptr
-    if (cp2) cout << "s2 -> Circle*    : success\n";
-    else     cout << "s2 -> Circle*    : failed (nullptr returned)\n";
-
-    try {
-        Circle &cr = dynamic_cast<Circle &>(*s2);  // invalid reference cast
-        cr.radiusInfo();
-    } catch (const bad_cast &e) {
-        cout << "Exception caught  : bad_cast thrown for reference cast\n";
+    if (derivedPtr != nullptr) {
+        derivedPtr->show();
+    } else {
+        cout << "dynamic_cast failed." << endl;
     }
-    delete s1;
-    delete s2;
 
-    cout << "\n===== 5. const_cast =====\n";
-    const int value = 99;
-    legacyPrint(const_cast<int *>(&value));     // safe: function only reads
-    int x = 5;
-    const int *cx = &x;
-    int *mx = const_cast<int *>(cx);            // safe: x is not truly const
-    *mx = 50;
-    cout << "x modified via const_cast = " << x << '\n';
+    delete basePtr;
 
-    cout << "\n===== 6. reinterpret_cast =====\n";
-    int n = 0x41424344;
-    char *bytes = reinterpret_cast<char *>(&n);
-    cout << "Bytes of 0x41424344 as chars: ";
-    for (int k = 0; k < 4; k++) cout << bytes[k];
-    cout << " (little-endian order)\n";
-    uintptr_t addr = reinterpret_cast<uintptr_t>(&n);
-    int *back = reinterpret_cast<int *>(addr);
-    cout << "Address round trip works: " << (back == &n ? "yes" : "no") << '\n';
+    // 3. const_cast
+    int value = 10;  // Originally non-const
+
+    const int* constPtr = &value;
+
+    int* modifiablePtr = const_cast<int*>(constPtr);
+
+    *modifiablePtr = 25;
+
+    cout << "const_cast: " << value << endl;
+
+    // 4. reinterpret_cast
+    int number = 50;
+
+    int* intPtr = &number;
+
+    char* charPtr = reinterpret_cast<char*>(intPtr);
+
+    int* restoredPtr = reinterpret_cast<int*>(charPtr);
+
+    cout << "reinterpret_cast (after converting back): "
+         << *restoredPtr << endl;
+
     return 0;
 }
